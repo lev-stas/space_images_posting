@@ -16,7 +16,7 @@ This script prepares your images for posting and posts them to your instagram ac
 ```PASSWORD == 'your_insta_password ```
 Image_posting.py script needs two mandatory arguments. The first one is the path to the directory, where your images are located. The second one is the name of folder which will be created for resized images in the same directory, where original pictures are stored. 
 ```python images_posting.py images resized``` (use ```python3``` instead ```python```  if you have both python2 and python3 versions).
-After uploading is finished all pictures will be deleted, both originals and resized copies. If you need to save original images, please make copies of them before you run this script.
+After uploading is finished all original pictures will be deleted. If you need to save original images, please make copies of them before you run this script.
 
 
 

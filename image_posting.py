@@ -3,63 +3,68 @@ from PIL import Image
 from instabot import Bot
 from dotenv import load_dotenv
 import argparse
+import time 
 
 
-image_dir = 'images'
-edited_images_dir = 'resized'
-
-if not os.path.exists (f'{image_dir}/{edited_images_dir}'):
-    os.makedirs(f'{image_dir}/{edited_images_dir}')
-
-# This function resizes images to 1080 px on long side
-def edit_image(directory):
-    images = os.listdir(image_dir)
+def resize_images (directory):
+    images = os.listdir(directory)
+    max_resolution = 1080
     for image in images:
-        if os.path.isfile(os.path.join(image_dir, image)):
-            file_name = image.split('.')[0]
-            picture = Image.open(f'{image_dir}/{image}')
-            if picture.width > picture.height:
-                proportion = picture.width / 1080
-                height = picture.height / proportion
-                picture.thumbnail((1080,height))
-                # if the difference between sides is more than 16:9, we should crop the image
-                if 1080 / height > 1.77:
-                    true_width = int(height * 1.77)
-                    ident = (1080 - true_width) / 2
-                    coordinates = (ident,0,1080 - ident, height)
-                    picture = picture.crop(coordinates)
-            elif picture.width < picture.height:
-                proportion = picture.height / 1080
-                width = picture.width / proportion
-                picture.thumbnail((width, 1080))
-                # if the difference between sides is more than 16:9, we should crop the image
-                if 1080 / width > 1.77:
-                    true_height = int(width * 1.77)
-                    ident = (1080 - true_height) / 2
-                    picture = picture.crop (0, ident, width, 1080-ident)
-            else:
-                picture.thumbnail((1080,1080))
-            rgb_picture = picture.convert('RGB')
+        if not os.path.isfile(os.path.join(directory, image)):
+            continue
+        file_name = image.split('.')[0]
+        picture = Image.open(f'{directory}/{image}')
+        if picture.width > picture.height:
+            proportion = picture.width / max_resolution
+            height = picture.height / proportion
+            picture.thumbnail((max_resolution, height))
+            picture = crop_image(picture)
+            
+        elif picture.width < picture.height:
+            proportion = picture.height / max_resolution
+            width = picture.width / proportion
+            picture.thumbnail((width, max_resolution))
+            picture = crop_image(picture)
+            
+        else:
+            picture.thumbnail((max_resolution, max_resolution))
+        picture = picture.convert('RGB')
         
-            rgb_picture.save(f'{basic_folder}/{resized_folder}/{file_name}.jpg')
-            print(f'{file_name} has been resized.')
-            os.remove(f'{basic_folder}/{image}')
-            print(f'{image} has been removed.')
-        print ('All done.')
+        picture.save(f'{directory}/{resized_folder}/{file_name}.jpg')
+        os.remove(f'{directory}/{image}')
 
-# this function posts images to instagram channel 
-def insta_post_image(image_folder):
-    login = os.getenv('LOGIN')
-    password = os.getenv('PASSWORD')
+def crop_image (image):
+    max_ratio = 1.91
+    min_ratio = 0.8
+    width = image.width
+    height = image.height
+    image_ratio = image.width / image.height
+    
+    if image_ratio > max_ratio:
+        limit_width = int(height * max_ratio)
+        indent = (width - limit_width) // 2
+        coordinates = (indent, 0, width-indent, height)
+        image = image.crop(coordinates)
+    elif image_ratio < min_ratio:
+        limit_height = width // min_ratio
+        indent = (height - limit_height) // 2
+        coordinates = (0, indent, width, height - indent)
+        image = image.crop(coordinates)
+    return image
+
+
+def post_images (image_folder):
     bot = Bot()
     bot.login(username=login, password=password)
     images = os.listdir(image_folder)
     for image in images:
-        if os.path.isfile(os.path.join(image_folder, image)):
-            bot.upload_photo(f'{image_folder}/{image}')
-            os.remove(f'{image_folder}/{image}.REMOVE_ME')
+        if not os.path.isfile(os.path.join(image_folder, image)):
+            continue
+        bot.upload_photo(f'{image_folder}/{image}')
+        time.sleep(10)
+        
     bot.logout()
-    print('All done.')
+
     
         
 
@@ -74,5 +79,10 @@ if __name__ == '__main__':
     basic_folder = args.basic_folder
     resized_folder = args.resized_folder
 
-    edit_image(basic_folder)
-    insta_post_image(f'{basic_folder}/{resized_folder}')
+    login = os.getenv('LOGIN')
+    password = os.getenv('PASSWORD')
+
+    os.makedirs(f'{basic_folder}/{resized_folder}', exist_ok=True)
+
+    resize_images (basic_folder)
+    post_images (f'{basic_folder}/{resized_folder}')

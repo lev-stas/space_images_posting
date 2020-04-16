@@ -2,15 +2,15 @@ import requests
 import os
 import argparse
 
-base_url = 'https://api.spacexdata.com/v3/launches/'
-dir_name = 'images'
+SPACEX_URL = 'https://api.spacexdata.com/v3/launches/'
 
-def spacex_api_response (url):
+
+def response_spacex_api (url):
     response = requests.get(url)
     response.raise_for_status()
     return response
 
-def image_downloader(response):
+def download_images(response):
     if not response['links']['flickr_images']:
         print ('No images of this flight. Try another flight number')
     else:
@@ -20,35 +20,34 @@ def image_downloader(response):
             image_response = requests.get(img)
             image_response.raise_for_status()
 
-            if not os.path.exists(dir_name):
-                os.makedirs(dir_name)
 
-            with open (f'{dir_name}/{file_name}', 'wb') as file:
+            with open (f'{images_dir}/{file_name}', 'wb') as file:
                 file.write(image_response.content)
-            print(f'{file_name} has been downloaded.')
-        print('All done.')
+            
 
                 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Image downloader from SpaceX')
     parser.add_argument('-n','--flight_number', help='Type flight number', type=int)
     args = parser.parse_args()
+    images_dir = 'images'
+    os.makedirs(images_dir, exist_ok=True)
 
     if not args.flight_number:
-        url = f'{base_url}latest'
-        response = spacex_api_response(url)
-        result = response.json()
+        url = f'{SPACEX_URL}latest'
+        response = response_spacex_api(url)
+        answer = response.json()
     else:
-        url = base_url
+        url = SPACEX_URL
         f_number = args.flight_number - 1
-        response = spacex_api_response(url)
+        response = response_spacex_api(url)
         try:
-            result = response.json()[f_number]
+            answer = response.json()[f_number]
         except IndexError:
             print(f'There is not such flight number yet. The latest flight is {len(response.json())}.')
             exit()
 
-    image_downloader(result)
+    download_images(answer)
 
     
         

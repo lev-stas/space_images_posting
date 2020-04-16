@@ -4,48 +4,45 @@ import argparse
 from urllib3.exceptions import InsecureRequestWarning
 
 
-dir_name = 'images'
-hubble_image_url = 'http://hubblesite.org/api/v3/image'
-hubble_collection_url = 'http://hubblesite.org/api/v3/images'
 
-def hubble_image_downloader (image_id):
+HUBBLE_IMAGE_URL = 'http://hubblesite.org/api/v3/image'
+HUBBLE_COLLECTION_URL = 'http://hubblesite.org/api/v3/images'
+
+def download_hubble_image (image_id):
     
-    response = requests.get(f'{hubble_image_url}/{image_id}')
+    response = requests.get(f'{HUBBLE_IMAGE_URL}/{image_id}')
     response.raise_for_status()
+    answer = response.json()
 
-    if 'image_files' in response.json().keys():
+    if 'image_files' in answer:
 
-        result = response.json()['image_files'][-1]
+        image = answer['image_files'][-1]
     
 
-        link = result['file_url']
-        width = result['width']
-        height = result['height']
-        resolution = result['file_url'].split('.')[-1]
+        link = image['file_url']
+        width = image['width']
+        height = image['height']
+        resolution = image['file_url'].split('.')[-1]
         file_name = f'{image_id}_{width}_{height}.{resolution}'
 
         requests.packages.urllib3.disable_warnings(category=InsecureRequestWarning)
         picture = requests.get('http:'+link, verify=False)
         picture.raise_for_status()
 
-        if not os.path.exists (dir_name):
-            os.makedirs (dir_name)
-
-        with open (f'{dir_name}/{file_name}', 'wb') as file:
+        with open (f'{images_dir}/{file_name}', 'wb') as file:
             file.write(picture.content)
-        print (f'{file_name} has been downloaded')
     else:
         print('There is no such image id. Try lower')
 
 
-def hubble_get_collection (collection):
-    response = requests.get(f'{hubble_collection_url}/{collection}')
+def get_hubble_collection (collection):
+    response = requests.get(f'{HUBBLE_COLLECTION_URL}/{collection}')
     response.raise_for_status()
-    result = response.json()
+    answer = response.json()
 
-    for image in result:
-        hubble_image_downloader(image['id'])
-    print ('All done.')
+    for image in answer:
+        download_hubble_image(image['id'])
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='hubble image downloader')
@@ -54,7 +51,10 @@ if __name__ == '__main__':
 
     img_collection = args.collection
 
+    images_dir = 'images'
+    os.makedirs (images_dir, exist_ok=True)
+
    
-    hubble_get_collection(img_collection)
+    get_hubble_collection(img_collection)
 
     
