@@ -31,8 +31,6 @@ def download_hubble_image (image_id):
 
         with open (f'{images_dir}/{file_name}', 'wb') as file:
             file.write(picture.content)
-    else:
-        print('There is no such image id. Try lower')
 
 
 def get_hubble_collection (collection):

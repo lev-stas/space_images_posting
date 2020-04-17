@@ -11,9 +11,7 @@ def response_spacex_api (url):
     return response
 
 def download_images(response):
-    if not response['links']['flickr_images']:
-        print ('No images of this flight. Try another flight number')
-    else:
+    if response['links']['flickr_images']:
         for img_number, img in enumerate(response['links']['flickr_images']):
             file_name = f'spaceX_image_{response["flight_number"]}_{img_number+1}.jpeg'
 
@@ -44,7 +42,6 @@ if __name__ == '__main__':
         try:
             answer = response.json()[f_number]
         except IndexError:
-            print(f'There is not such flight number yet. The latest flight is {len(response.json())}.')
             exit()
 
     download_images(answer)
